@@ -2,17 +2,16 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <pthread.h>
+#include <unistd.h>
 
-#define hexit      \
-  do {             \
-    displayHelp(); \
-    return -1;     \
+#define hexit					\
+  do {						\
+    displayHelp();				\
+    return -1;					\
   } while (0);
 
-#define ez(x) do{ if ((x) == NULL) exit(1); } while(0);
-
 typedef struct {
-  volatile _Bool read;
+  //  volatile _Bool read;
   void *data;
 } node;
 
@@ -21,76 +20,89 @@ typedef struct {
   long size;
 } thread_args;
 
-void displayHelp() { printf("Usage: buffer [buffer_size] -pthread"); }
-void *write(void *a);
-void *read(void *a);
+void displayHelp() {
+  printf("Usage: buffer [buffer_size]\n");
+  exit(1);
+}
+void *writer(void *a);
+void *reader(void *a);
 
-int main(int argc, char **argv) {
-  if (argc > 2) hexit;
-  long size = 100;
+int main(int argc, char **argv) {  
+  unsigned long size = 100;
+  pthread_t reader_t, writer_t;
+  node *buffer;
+  
+  if (argc > 2)
+    displayHelp();
+  
   if (argc == 2) size = strtol(argv[1], NULL, 10);
-  if (size == LONG_MAX || size == LONG_MIN) hexit;
+
+  if (size > LONG_MAX) size = LONG_MAX;
 
   srand(time(NULL)); // seed
-  node *buffer = malloc (size*sizeof(node));
-  ez(buffer);
-  for (long i = 0; i < size; i++)
-    buffer[i].read = 1;
 
-  printf("deploying threads...\n");
-  pthread_t reader, writer;
+  if((buffer = calloc (size, sizeof(node))) == NULL)
+    return(-1);
+
+  printf("Spawning threads...\n");
+
   thread_args x = {.buf = buffer, .size = size};
-  pthread_create(&writer,NULL,write,&x);
-  pthread_create(&reader,NULL,read,&x);
-
-  pthread_join(reader, NULL);
-  pthread_join(writer, NULL);
+  pthread_create(&writer_t,NULL,writer,&x);
+  pthread_create(&reader_t,NULL,reader,&x);
+    
+  pthread_join(reader_t, NULL);
+  pthread_join(writer_t, NULL);  
 }
 
-void *read(void *a){
+void *reader(void *a) {
   thread_args arg = *(thread_args*)a;
   long size = arg.size;
   node *buf = arg.buf;
-
   long i = 0;
-  while(1){
-    while (buf[i].read == 1) {
-      struct timespec wait = {.tv_nsec = (100 + (rand() % 100)) * 1000000, .tv_sec = 0};
-      printf("READER -> Buffer empty. Trying again in %ld ms...\n", wait.tv_nsec / 1000000);
-      nanosleep(&wait,NULL);
+    
+  while(1) {
+    int *val;
+      
+    while (buf[i].data == NULL) {
+      printf("READER -> Buffer empty\n");
+      usleep(rand() % 10);
     }
-    int *val = buf[i].data;
+
+    val = buf[i].data;
     printf("READER -> Read %d in buf[%ld]\n", *val, i);
+
     free(buf[i].data);
     buf[i].data = NULL;
-    buf[i].read = 1;
-    i = (i+1) % size;
-    struct timespec wait = {.tv_nsec = (50 + (rand() % 207)) * 1000000, .tv_sec = 0};
-    nanosleep(&wait,NULL);
-  }
 
+    i = (i+1) % size;
+    usleep(1);
+  }
 }
 
-void *write(void *a){
+void *writer(void *a) {
   thread_args arg = *(thread_args*)a;
   long size = arg.size;
   node *buf = arg.buf;
-
   long i = 0;
-  while(1){
-    while (buf[i].read == 0) {
-      struct timespec wait = {.tv_nsec = (50 + (rand() % 200)) * 1000000, .tv_sec = 0};
-      printf("WRITER -> Buffer full. Trying again in %ld ms...\n", wait.tv_nsec / 1000000);
-      nanosleep(&wait,NULL);
+  
+  while(1) {
+    int *val;
+    
+    while (buf[i].data != NULL) {
+      printf("WRITER -> Buffer full\n");
+      usleep(rand() % 10);
     }
-    int *val = malloc (sizeof(int));
-    ez(val);
-    *val = rand() % 1000;
-    buf[i].data = val;
-    //printf("WRITER -> Wrote %d in buf[%ld]\n", *val, i);
-    buf[i].read = 0;
-    i = (i+1) % size;
-    struct timespec wait = {.tv_nsec = (100 + (rand() % 100)) * 1000000, .tv_sec = 0};
-    nanosleep(&wait,NULL);
+
+    val = malloc (sizeof(int));
+    
+    if(val != NULL) {
+      *val = rand() % 1000;
+      buf[i].data = val;
+      printf("WRITER -> Wrote %d in buf[%ld]\n", *val, i);
+      
+      i = (i+1) % size;
+    }
+    
+    usleep(1);
   }
 }
