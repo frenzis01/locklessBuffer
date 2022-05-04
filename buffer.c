@@ -32,10 +32,11 @@ int main(int argc, char **argv) {
   if (size == LONG_MAX || size == LONG_MIN) hexit;
 
   srand(time(NULL)); // seed
-  node *buffer = malloc (sizeof(node) * size);
-  // ez(buffer);
+  node *buffer = malloc (size*sizeof(node));
+  ez(buffer);
+  for (long i = 0; i < size; i++)
+    buffer[i].read = 1;
 
-  buffer[0].read = 1;
   printf("deploying threads...\n");
   pthread_t reader, writer;
   thread_args x = {.buf = buffer, .size = size};
@@ -62,9 +63,9 @@ void *read(void *a){
     printf("READER -> Read %d in buf[%ld]\n", *val, i);
     free(buf[i].data);
     buf[i].data = NULL;
-    buf->read = 1;
+    buf[i].read = 1;
     i = i+1 % size;
-    struct timespec wait = {.tv_nsec = (100 + (rand() % 50)) * 1000000, .tv_sec = 0};
+    struct timespec wait = {.tv_nsec = (50 + (rand() % 200)) * 1000000, .tv_sec = 0};
     nanosleep(&wait,NULL);
   }
 
@@ -87,9 +88,9 @@ void *write(void *a){
     *val = rand() % 1000;
     buf[i].data = val;
     //printf("WRITER -> Wrote %d in buf[%ld]\n", *val, i);
+    buf[i].read = 0;
     i = i+1 % size;
-    buf->read = 0;
-    struct timespec wait = {.tv_nsec = (50 + (rand() % 100)) * 1000000, .tv_sec = 0};
+    struct timespec wait = {.tv_nsec = (100 + (rand() % 100)) * 1000000, .tv_sec = 0};
     nanosleep(&wait,NULL);
   }
 }
