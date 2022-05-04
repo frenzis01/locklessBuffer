@@ -26,9 +26,9 @@ void *write(void *a);
 void *read(void *a);
 
 int main(int argc, char **argv) {
-  if (argc > 3) hexit;
+  if (argc > 2) hexit;
   long size = 100;
-  if (argc == 3) size = strtol(argv[1], NULL, 10);
+  if (argc == 2) size = strtol(argv[1], NULL, 10);
   if (size == LONG_MAX || size == LONG_MIN) hexit;
 
   srand(time(NULL)); // seed
@@ -65,7 +65,7 @@ void *read(void *a){
     buf[i].data = NULL;
     buf[i].read = 1;
     i = i+1 % size;
-    struct timespec wait = {.tv_nsec = (50 + (rand() % 200)) * 1000000, .tv_sec = 0};
+    struct timespec wait = {.tv_nsec = (50 + (rand() % 207)) * 1000000, .tv_sec = 0};
     nanosleep(&wait,NULL);
   }
 
