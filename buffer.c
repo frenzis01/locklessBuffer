@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
   if (argc == 2) size = strtol(argv[1], NULL, 10);
 
-  if (size > LONG_MAX) size = LONG_MAX-1;
+  if (size > LONG_MAX) size = LONG_MAX;
   size = roundUp2Power(size);
 
   srand(time(NULL));  // seed
@@ -111,10 +111,10 @@ void *writer(void *a) {
 /**
  * 
  * @note n must be > 0 && < LONG_MAX
- * @return 'n' nearest greater power of 2 unless n == LONG_MAX
+ * @return 'n' nearest greater power of 2 or lesser if n == LONG_MAX
  */
 long roundUp2Power(long n) {
-  if (n <= 0 )
+  if (n <= 0)
     return 0;
   n = n - 1;
 
@@ -124,6 +124,6 @@ long roundUp2Power(long n) {
   }
 
   // n is a power of two but lesser than the given parameter
-  // left shift to get next power of 2
-  return n << 1;
+  // left shift to get next power of 2 if not overflow
+  return n << 1 < 0 ? n : n << 1;
 }
