@@ -64,7 +64,7 @@ void *read(void *a){
     free(buf[i].data);
     buf[i].data = NULL;
     buf[i].read = 1;
-    i = i+1 % size;
+    i = (i+1) % size;
     struct timespec wait = {.tv_nsec = (50 + (rand() % 207)) * 1000000, .tv_sec = 0};
     nanosleep(&wait,NULL);
   }
@@ -89,7 +89,7 @@ void *write(void *a){
     buf[i].data = val;
     //printf("WRITER -> Wrote %d in buf[%ld]\n", *val, i);
     buf[i].read = 0;
-    i = i+1 % size;
+    i = (i+1) % size;
     struct timespec wait = {.tv_nsec = (100 + (rand() % 100)) * 1000000, .tv_sec = 0};
     nanosleep(&wait,NULL);
   }
