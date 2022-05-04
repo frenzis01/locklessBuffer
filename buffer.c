@@ -48,8 +48,8 @@ int main(int argc, char **argv) {
   printf("Spawning threads...\n");
 
   thread_args x = {.buf = buffer, .size = size};
-  pthread_create(&writer_t, NULL, writer, &x);
-  pthread_create(&reader_t, NULL, reader, &x);
+  if (pthread_create(&writer_t, NULL, writer, &x) == -1) exit(1);
+  if (pthread_create(&reader_t, NULL, reader, &x) == -1) exit(1);
 
   pthread_join(reader_t, NULL);
   pthread_join(writer_t, NULL);
